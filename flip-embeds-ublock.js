@@ -1,70 +1,75 @@
-/// flip-player.js
-    (function () {
-        'use strict';
+// Scriptlets for uBlock Origin
 
-        // Optional: Sicherheitscheck auf bestimmte Domain
-        // Wenn du willst, passe "example.com" auf deine Zielseite an
-        if (!/(^|\.)example\.com$/.test(document.location.hostname)) {
-            return;
+/// flip-video.js
+(function () {
+    'use strict';
+
+    // Nur auf rule34video.com (+ Subdomains)
+    if (!/(^|\.)rule34video\.com$/.test(location.hostname)) {
+        return;
+    }
+
+    const SEL = 'video';
+    const MARK_ATTR = 'data-ublock-flip-video';
+
+    function flip(el) {
+        if (!el || el.nodeType !== 1) return;
+        if (el.getAttribute(MARK_ATTR) === '1') return;
+        el.setAttribute(MARK_ATTR, '1');
+
+        const cs = getComputedStyle(el);
+        const base = cs.transform && cs.transform !== 'none'
+            ? cs.transform + ' '
+            : '';
+
+        const t = base + 'scaleX(-1)';
+
+        el.style.transform = t;
+        el.style.transformOrigin = 'center center';
+
+        // für ältere Engines
+        el.style.webkitTransform = t;
+        el.style.webkitTransformOrigin = 'center center';
+    }
+
+    function scanAll() {
+        document.querySelectorAll(SEL).forEach(flip);
+    }
+
+    function handleAdded(node) {
+        if (!node || node.nodeType !== 1) return;
+
+        if (node.matches && node.matches(SEL)) {
+            flip(node);
         }
-
-        const SELECTOR = 'video, iframe, embed, object';
-        const MARK_ATTR = 'data-ublock-flip-embeds';
-
-        function flipElement(el) {
-            if (!el || el.nodeType !== 1) return;
-            if (el.getAttribute(MARK_ATTR) === '1') return;
-            el.setAttribute(MARK_ATTR, '1');
-
-            // Vorhandenen transform mitbenutzen (falls schon einer gesetzt ist)
-            const cs = getComputedStyle(el);
-            const current = cs.transform && cs.transform !== 'none'
-                ? cs.transform + ' '
-                : '';
-
-            const newTransform = current + 'scaleX(-1)';
-
-            el.style.transform = newTransform;
-            el.style.transformOrigin = 'center center';
-
-            // Für ältere Browser-Engines
-            el.style.webkitTransform = newTransform;
-            el.style.webkitTransformOrigin = 'center center';
+        if (node.querySelectorAll) {
+            node.querySelectorAll(SEL).forEach(flip);
         }
+    }
 
-        function scanAll() {
-            document.querySelectorAll(SELECTOR).forEach(flipElement);
-        }
-
-        function handleAddedNode(node) {
-            if (!node || node.nodeType !== 1) return;
-            if (node.matches(SELECTOR)) flipElement(node);
-            node.querySelectorAll(SELECTOR).forEach(flipElement);
-        }
-
-        function setupObserver() {
-            const observer = new MutationObserver(mutations => {
-                for (const m of mutations) {
-                    for (const n of m.addedNodes) {
-                        handleAddedNode(n);
-                    }
+    function setupObserver() {
+        const obs = new MutationObserver(muts => {
+            for (const m of muts) {
+                for (const n of m.addedNodes) {
+                    handleAdded(n);
                 }
-            });
+            }
+        });
 
-            observer.observe(document.documentElement, {
-                childList: true,
-                subtree: true
-            });
-        }
+        obs.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+        });
+    }
 
-        function init() {
-            scanAll();
-            setupObserver();
-        }
+    function init() {
+        scanAll();
+        setupObserver();
+    }
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
-    })();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
