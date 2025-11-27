@@ -1,5 +1,3 @@
-// Scriptlets for uBlock Origin
-
 /// flip-video.js
 (function () {
     'use strict';
@@ -73,3 +71,4 @@
         init();
     }
 })();
+
